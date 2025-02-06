@@ -101,12 +101,6 @@ Contributions, issues, and feature requests are welcome!
 
 ---
 
-## License
-
-This project is licensed under the [MIT License](LICENSE). Feel free to modify or distribute it as you wish.
-
----
-
 ### Questions or Feedback?
 
 If you have any questions or suggestions, feel free to [open an issue](../../issues) or contact the repository owner. We appreciate your feedback and contributions!
