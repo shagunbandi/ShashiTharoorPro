@@ -39,7 +39,7 @@ async function improveTextWithAI(originalText) {
       },
       body: JSON.stringify({
         model: 'gpt-3.5-turbo-instruct',
-        prompt: `Rewrite the following text to make it more professional and elaborate it:\n\n${originalText}\n\nImproved text:`,
+        prompt: `Rewrite the following text to make it more professional:\n\n${originalText}\n\nImproved text:`,
         max_tokens: 1000,
         temperature: 0.7,
       }),
