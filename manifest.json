@@ -1,9 +1,10 @@
 {
-  "name": "AI Text Improver",
+  "name": "My AI Improver",
   "version": "1.0",
-  "description": "Improve text with a more professional tone by typing /ai in any input field.",
   "manifest_version": 3,
-  "permissions": ["activeTab", "scripting"],
+  "description": "Rewrite text to be more professional using OpenAI. Stores API key in Options page.",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "options_page": "options.html",
   "content_scripts": [
     {
       "matches": ["<all_urls>"],

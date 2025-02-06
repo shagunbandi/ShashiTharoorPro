@@ -1,36 +1,30 @@
 /********************************
- *   PROMPT FOR OPENAI API KEY  *
+ *  STORAGE & GLOBAL API KEY    *
  ********************************/
+let userAPIKey = null
 
-// Check localStorage for an existing API key
-let userAPIKey = localStorage.getItem('openAIKey')
-if (!userAPIKey) {
-  userAPIKey = prompt('Please enter your OpenAI API key to use AI features:')
-  if (userAPIKey) {
-    localStorage.setItem('openAIKey', userAPIKey)
-  }
-}
+// We'll load the key once at the start of the script
+// (If the user changes it, they'll need to refresh the tab or rely on another approach.)
+chrome.storage.local.get(['openAIKey'], (result) => {
+  userAPIKey = result.openAIKey || null
+})
 
 /********************************
  *   CONFIG & HELPER FUNCTIONS  *
  ********************************/
 
-// The (legacy) Completions endpoint for GPT-3.5-turbo-instruct or text-davinci-* models.
-// If you use the Chat endpoint, you'd have to adjust the request body format.
 const OPENAI_API_URL = 'https://api.openai.com/v1/completions'
 
-/**
- * Calls OpenAI to improve the given text.
- * (Adjust the request as needed for your model and prompt style.)
- */
+// Calls OpenAI to improve the given text (only if we have an API key)
 async function improveTextWithAI(originalText) {
-  try {
-    if (!userAPIKey) {
-      // If user canceled the prompt or there's no key, just return original text
-      console.warn('No OpenAI API key available. Returning original text.')
-      return originalText
-    }
+  if (!userAPIKey) {
+    console.warn(
+      'No OpenAI API key found in local storage. Cannot improve text.',
+    )
+    return originalText
+  }
 
+  try {
     const response = await fetch(OPENAI_API_URL, {
       method: 'POST',
       headers: {
@@ -46,7 +40,11 @@ async function improveTextWithAI(originalText) {
     })
 
     const data = await response.json()
-    const improvedText = data?.choices?.[0]?.text?.trim() || originalText
+    if (data.error) {
+      console.error('OpenAI API Error:', data.error)
+      return originalText
+    }
+    const improvedText = data.choices?.[0]?.text?.trim() || originalText
     return improvedText
   } catch (error) {
     console.error('Error calling OpenAI API:', error)
@@ -58,63 +56,48 @@ async function improveTextWithAI(originalText) {
  *  GET/SET TEXT FROM ANY EDITOR
  ********************************/
 
-/**
- * Attempts to retrieve the *plain text* from an editor target:
- * - <input>, <textarea>
- * - Quill (.ql-editor)
- * - CodeMirror (.cm-editor / .cm-content)
- * - or any contentEditable element
- */
 function getTextFromTarget(target) {
   const tagName = target.tagName ? target.tagName.toLowerCase() : ''
   if (tagName === 'input' || tagName === 'textarea') {
     return target.value
   }
 
-  // If it's Quill, CodeMirror, or a generic contentEditable...
-  // Many WYSIWYG editors set contentEditable on their main DOM node.
-  if (
-    target.classList &&
-    (target.classList.contains('ql-editor') ||
+  // Quill, CodeMirror, or generic contentEditable
+  if (target.classList) {
+    if (
+      target.classList.contains('ql-editor') ||
       target.classList.contains('cm-editor') ||
       target.classList.contains('cm-content') ||
-      target.isContentEditable)
-  ) {
-    return target.innerText
+      target.isContentEditable
+    ) {
+      return target.innerText
+    }
   }
 
-  // Fallback: if nothing matched, return empty or try textContent
+  // Fallback
   return target.innerText || ''
 }
 
-/**
- * Sets the *plain text* back into the editor target.
- * This will remove custom formatting in Quill, CodeMirror, etc.
- * For advanced usage, you'd integrate each editor's own API instead.
- */
 function setTextToTarget(target, newText) {
   const tagName = target.tagName ? target.tagName.toLowerCase() : ''
   if (tagName === 'input' || tagName === 'textarea') {
     target.value = newText
-  } else if (
-    target.classList &&
-    (target.classList.contains('ql-editor') ||
+  } else if (target.classList) {
+    if (
+      target.classList.contains('ql-editor') ||
       target.classList.contains('cm-editor') ||
       target.classList.contains('cm-content') ||
-      target.isContentEditable)
-  ) {
-    target.innerText = newText
+      target.isContentEditable
+    ) {
+      target.innerText = newText
+    }
   }
-  // Fallback: do nothing for unknown types
 }
 
 /********************************
  *  TOOLTIP CREATION / REMOVAL  *
  ********************************/
 
-/**
- * Create a small tooltip near the target element showing the improved text.
- */
 function showTooltip(target, improvedText) {
   removeTooltip()
 
@@ -135,80 +118,54 @@ function showTooltip(target, improvedText) {
   return tooltip
 }
 
-/**
- * Position the tooltip near (above/below) the target element.
- */
 function positionTooltip(target, tooltip) {
   const rect = target.getBoundingClientRect()
   const tooltipHeight = tooltip.offsetHeight
-
-  // Try above the element
   const top = rect.top + window.scrollY - tooltipHeight - 10
   const left = rect.left + window.scrollX
-
-  // If there's no space above, place it below
   const finalTop = top < 0 ? rect.bottom + window.scrollY + 10 : top
-
   tooltip.style.top = `${finalTop}px`
   tooltip.style.left = `${left}px`
 }
 
-/** Remove any existing tooltip from the DOM. */
 function removeTooltip() {
   const existing = document.getElementById('ai-tooltip')
-  if (existing) {
-    existing.remove()
-  }
+  if (existing) existing.remove()
 }
 
 /********************************
  *      GLOBAL STATE MGMT       *
  ********************************/
-// We store a “suggestion” object if we have an active improved text
 let activeSuggestion = null
-/*
+/* 
 activeSuggestion = {
-  target: HTMLElement  (the input or .ql-editor, etc.),
+  target: HTMLElement,
   originalText: string,
   improvedText: string,
-  tooltipEl: HTMLElement (the tooltip div)
-};
+  tooltipEl: HTMLElement
+}
 */
 
 /********************************
  *  MAIN LOGIC: DETECT "/ai"    *
  ********************************/
 
-/**
- * Listen for /ai in any editable surface. We'll do this on keyup
- * so we see the typed character.  If found, we fetch improved text and display a tooltip.
- */
 function handleKeyUp(event) {
   const target = event.target
   if (!target) return
 
   const text = getTextFromTarget(target)
   if (text.endsWith('/ai')) {
-    // Remove the "/ai" portion
+    // Strip off "/ai"
     const textWithoutCommand = text.slice(0, -3).trimEnd()
     fetchAndShowSuggestion(target, textWithoutCommand)
   }
 }
 
-/**
- * Fetch improved text from AI, show tooltip, and store suggestion state.
- */
 function fetchAndShowSuggestion(target, originalText) {
   improveTextWithAI(originalText).then((improvedText) => {
     const tooltipEl = showTooltip(target, improvedText)
-
-    // Set global suggestion info
-    activeSuggestion = {
-      target,
-      originalText,
-      improvedText,
-      tooltipEl,
-    }
+    activeSuggestion = { target, originalText, improvedText, tooltipEl }
   })
 }
 
@@ -216,43 +173,31 @@ function fetchAndShowSuggestion(target, originalText) {
  * HANDLE ACCEPT/REJECT BY KEYS *
  ********************************/
 
-/**
- * Listen for keydown events to accept or dismiss the suggestion:
- * - Tab => Accept
- * - Escape => Dismiss
- * - Any normal typing => Dismiss
- */
 function handleKeyDown(event) {
-  if (!activeSuggestion) return // No active suggestion to handle
+  if (!activeSuggestion) return
 
   const { target, improvedText } = activeSuggestion
 
-  // If user presses Tab => Accept
+  // Tab => accept
   if (event.key === 'Tab') {
-    // Prevent focus change
     event.preventDefault()
     acceptSuggestion(target, improvedText)
     return
   }
 
-  // If user presses Escape => Reject
+  // Escape => reject
   if (event.key === 'Escape') {
     rejectSuggestion()
     return
   }
 
-  // If user types normal characters => reject
+  // If user is typing normal characters => reject
   if (isTypingCharacter(event)) {
     rejectSuggestion()
   }
 }
 
-/**
- * Returns true if the keydown event is a "typing character" (letters, digits, punctuation)
- * vs. a control key (Shift, Ctrl, Alt, Arrow keys, etc.).
- */
 function isTypingCharacter(event) {
-  // Common non-typing keys we want to ignore
   const ignoreKeys = new Set([
     'ArrowLeft',
     'ArrowRight',
@@ -265,15 +210,11 @@ function isTypingCharacter(event) {
     'CapsLock',
     'Tab', // handled separately
     'Escape', // handled separately
-    'Enter', // optionally handle if you want accept on Enter
+    'Enter',
   ])
-
   return !ignoreKeys.has(event.key)
 }
 
-/********************************
- *  ACCEPT / REJECT SUGGESTION  *
- ********************************/
 function acceptSuggestion(target, improvedText) {
   setTextToTarget(target, improvedText)
   removeTooltip()
