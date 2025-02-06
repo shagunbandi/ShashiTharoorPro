@@ -1,4 +1,3 @@
-```markdown
 # AI Text Refiner
 
 A simple Chrome extension that helps you refine your text into clear, polished English. Just type your sentence and end it with `/ai` to instantly transform it.
@@ -111,4 +110,3 @@ This project is licensed under the [MIT License](LICENSE). Feel free to modify o
 ### Questions or Feedback?
 
 If you have any questions or suggestions, feel free to [open an issue](../../issues) or contact the repository owner. We appreciate your feedback and contributions!
-```
