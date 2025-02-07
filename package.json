@@ -1,0 +1,15 @@
+{
+  "name": "ai-text-improver-extension",
+  "version": "1.0.0",
+  "description": "A simple Chrome extension that helps you refine your text into clear, polished English. Just type your sentence and end it with `/ai` to instantly transform it.",
+  "main": "options.js",
+  "scripts": {
+    "build": "rollup contentScripts/main.js --file contentScript.bundle.js --format iife"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "rollup": "^4.34.4"
+  }
+}

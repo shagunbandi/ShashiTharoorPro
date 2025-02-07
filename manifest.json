@@ -2,14 +2,13 @@
   "name": "My AI Improver",
   "version": "1.0",
   "manifest_version": 3,
-  "description": "Rewrite text to be more professional using OpenAI. Stores API key in Options page.",
+  "description": "Rewrite text using OpenAI. Stores API key in Options page.",
   "permissions": ["storage", "activeTab", "scripting"],
   "options_page": "options.html",
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["contentScript.js"]
+      "js": ["contentScript.bundle.js"]
     }
-  ],
-  "icons": {}
+  ]
 }
