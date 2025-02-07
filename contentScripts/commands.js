@@ -9,50 +9,43 @@
 // }
 
 export function parseCommand(fullText) {
-  // Trim trailing whitespace to see if it ends with a recognized pattern
   const trimmedText = fullText.trimEnd()
 
-  // 1) Check for block-based patterns: /start ... /end /ai  OR  /s ... /e /ai
-  // We'll search for these patterns first. If found, handle that text only.
-  let blockMatch = matchBlockSyntax(trimmedText)
-  if (blockMatch) {
-    return blockMatch
-  }
+  // 1) Block syntax: /start ... /end /ai  OR  /s ... /e /t ...
+  const blockMatch = matchBlockSyntax(trimmedText)
+  if (blockMatch) return blockMatch
 
-  // 2) Otherwise, check for simpler commands at the end of text
-  //    e.g. "Hello world /ai" or "Hello /elaborate" or "Hello /translate Spanish"
-  let simpleMatch = matchSimpleSyntax(trimmedText)
-  if (simpleMatch) {
-    return simpleMatch
-  }
+  // 2) Simple suffix for /ai or /elaborate only
+  const simpleMatch = matchSimpleSyntax(trimmedText)
+  if (simpleMatch) return simpleMatch
 
-  // If none match, return null -> no recognized command
+  // 3) Translate with trailing slash (either /translate or /t)
+  const slashEndTranslateMatch = matchTranslateSlashEnd(trimmedText)
+  if (slashEndTranslateMatch) return slashEndTranslateMatch
+
+  // No recognized command
   return null
 }
 
 /**
- * For matches like:
- *   /start <some text> /end /ai
- *   /s <some text> /e /elaborate
- *   /s <some text> /e /translate Spanish
+ *  BLOCK SYNTAX
+ *  e.g.:
+ *    /start <some text> /end /ai
+ *    /s <some text> /e /elaborate
+ *    /s <some text> /e /translate Spanish
+ *    /s <some text> /e /t Spanish
  */
 function matchBlockSyntax(text) {
-  // We'll define a regex for the capturing group:
-  //   either "/start" or "/s", then (some text in between), then "/end" or "/e", then one of /ai | /elaborate | /translate ...
+  // Regex now includes (\/translate|\/t)
+  // So /t or /translate can appear after /end /e
+  // e.g. /s Hello /e /t Spanish
   const blockRegex =
-    /(\/start|\/s)([\s\S]*?)(\/end|\/e)\s(\/ai|\/elaborate|\/translate)(\s+[^\s]+)?$/i
-  // Explanation:
-  //   (\/start|\/s) => matches /start OR /s
-  //   ([\s\S]*?) => capture everything (non-greedy) until next group
-  //   (\/end|\/e) => matches /end OR /e
-  //   \s => a space
-  //   (\/ai|\/elaborate|\/translate) => the main command
-  //   (\s+[^\s]+)? => optionally capture a language argument if /translate is used
+    /(\/start|\/s)([\s\S]*?)(\/end|\/e)\s(\/ai|\/elaborate|\/translate|\/t)(\s+[^\s]+)?$/i
 
-  let match = text.match(blockRegex)
+  const match = text.match(blockRegex)
   if (!match) return null
 
-  const commandKeyword = match[4].toLowerCase() // /ai, /elaborate, /translate
+  const commandKeyword = match[4].toLowerCase() // e.g. /ai, /elaborate, /translate, /t
   let commandType = null
   let language = undefined
 
@@ -64,29 +57,26 @@ function matchBlockSyntax(text) {
       commandType = 'elaborate'
       break
     case '/translate':
+    case '/t': // Treat both as translate
       commandType = 'translate'
       break
+    default:
+      return null
   }
 
+  // If it's translate or t, we might have a language chunk
   if (commandType === 'translate') {
-    // If there's a language chunk, e.g. " /translate Spanish"
-    // match[5] might look like " Spanish"
+    // e.g. " /translate Spanish"
     if (match[5]) {
       language = match[5].trim()
     } else {
-      language = 'English' // or default, if not provided
+      language = 'English'
     }
   }
 
-  // The second capture group is the text we want to transform
-  // e.g. /s Hello this is text /e /ai => match[2] = " Hello this is text "
-  let textToProcess = match[2].trim()
-
-  // Identify the exact replaced range so we can remove it from the original
-  // Not strictly required if we want to fully replace the entire text,
-  // but let's keep it in case we only want to replace the portion
+  const textToProcess = match[2].trim()
   const startIndex = match.index
-  const endIndex = match.index + match[0].length
+  const endIndex = startIndex + match[0].length
 
   return {
     commandType,
@@ -97,26 +87,21 @@ function matchBlockSyntax(text) {
 }
 
 /**
- * For simpler commands that appear at the end of the entire text:
- *   "some text here /ai"
- *   "some text here /elaborate"
- *   "some text here /translate Spanish"
+ * SIMPLE SUFFIX for /ai or /elaborate only
+ * e.g. "some text /ai", "some text /elaborate"
+ *
+ * We explicitly exclude '/translate' or '/t' here,
+ * so that translate always requires a trailing slash.
  */
 function matchSimpleSyntax(text) {
-  // We'll define a simpler pattern: (.*) (/(ai|elaborate|translate)(\s+\S+)?)$
-  //   capture all text up until the last space
-  //   then slash + command + optional language
-  const regex = /^(.*)(\/(ai|elaborate|translate)(\s+[^\s]+)?)$/i
-  let match = text.match(regex)
+  // This pattern captures only /ai or /elaborate at the end
+  // e.g. "Hello world /ai"
+  const regex = /^(.*)(\/(ai|elaborate))$/i
+  const match = text.match(regex)
   if (!match) return null
 
-  // match[1] => the text before the command
-  // match[2] => the entire slash+command (e.g. "/translate Spanish")
-  // match[3] => just "ai" or "elaborate" or "translate"
-  // match[4] => possibly the language " Spanish"
-  const rawCommand = match[3].toLowerCase()
+  const rawCommand = match[3].toLowerCase() // "ai" or "elaborate"
   let commandType = null
-  let language = undefined
 
   switch (rawCommand) {
     case 'ai':
@@ -125,27 +110,39 @@ function matchSimpleSyntax(text) {
     case 'elaborate':
       commandType = 'elaborate'
       break
-    case 'translate':
-      commandType = 'translate'
-      break
-  }
-
-  if (commandType === 'translate') {
-    // e.g. match[4] => " Spanish"
-    if (match[4]) {
-      language = match[4].trim()
-    } else {
-      language = 'English'
-    }
+    default:
+      return null
   }
 
   return {
     commandType,
     textToProcess: match[1].trim(),
+    replacedRange: [0, text.length],
+  }
+}
+
+/**
+ * TRAILING-SLASH TRANSLATE
+ * e.g.:
+ *   "Hello world /translate Spanish/"
+ *   "some text /t French/"
+ *
+ * We look for either "/translate" or "/t",
+ * then a space, then the language, then a trailing slash.
+ */
+function matchTranslateSlashEnd(text) {
+  // (?:translate|t) means match "translate" OR "t"
+  const slashEndRegex = /^(.*)\/(?:translate|t)\s+([^/]+)\/$/i
+  const match = text.match(slashEndRegex)
+  if (!match) return null
+
+  const textToProcess = match[1].trim()
+  const language = match[2].trim()
+
+  return {
+    commandType: 'translate',
+    textToProcess,
     language,
-    // Since the user typed "some text /ai" at the very end, the replaced range
-    // is basically the entire length if we want to replace it all,
-    // or we can note the end indices. Up to you how you handle partial replacements.
     replacedRange: [0, text.length],
   }
 }

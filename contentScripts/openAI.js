@@ -54,7 +54,7 @@ export async function elaborateText(originalText) {
 
 export async function translateText(originalText, language) {
   // For example: "Translate the following text into Spanish: <text>"
-  const prompt = `Translate the following text into ${language} without adding any special characters. Just use english alphabets:\n\n${originalText}\n\nTranslation:`
+  const prompt = `Translate the following text into ${language}:\n\n${originalText}\n\nTranslation:`
   const result = await callOpenAI(prompt)
   return result || originalText
 }
