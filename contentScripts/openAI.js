@@ -39,6 +39,18 @@ async function callOpenAI(promptText) {
   }
 }
 
+async function callOpenAIAPI(endpoint, data) {
+    const response = await fetch(`https://api.openai.com/v1/${endpoint}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer YOUR_API_KEY`
+        },
+        body: JSON.stringify(data)
+    });
+    return response.json();
+}
+
 export async function improveText(originalText) {
   const prompt = `Rewrite the following text to make it more professional:\n\n${originalText}\n\nImproved text:`
   const result = await callOpenAI(prompt)
@@ -57,4 +69,10 @@ export async function translateText(originalText, language) {
   const prompt = `Translate the following text into ${language}:\n\n${originalText}\n\nTranslation:`
   const result = await callOpenAI(prompt)
   return result || originalText
+}
+
+export async function summarizeText(originalText) {
+    const prompt = `Summarize the following text:\n\n${originalText}\n\nSummary:`;
+    const result = await callOpenAI(prompt);
+    return result || originalText;
 }
