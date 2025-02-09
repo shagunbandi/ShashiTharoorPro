@@ -4,7 +4,7 @@ document.getElementById('saveButton').addEventListener('click', () => {
     console.log('API Key entered:', apiKey); // Log input for debugging
 
     if (apiKey) {
-        chrome.storage.sync.set({ openAIKey: apiKey }, () => {
+        chrome.storage.local.set({ openAIKey: apiKey }, () => {
             if (chrome.runtime.lastError) {
                 console.error('Error saving API Key:', chrome.runtime.lastError.message);
                 showTooltip('Failed to save API Key.');
@@ -34,8 +34,5 @@ function showTooltip(message) {
 
     setTimeout(() => {
         tooltip.remove();
-        setTimeout(() => {
-            window.close();
-        }, 2000);
-    }, 1000);
+    }, 2000);
 } 
