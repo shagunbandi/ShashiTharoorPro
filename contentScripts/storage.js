@@ -2,7 +2,7 @@
 let userAPIKey = null
 
 // Load the key on initialization
-chrome.storage.local.get(['openAIKey'], (result) => {
+chrome.storage.sync.get(['openAIKey'], (result) => {
   userAPIKey = result.openAIKey || null
   if (!userAPIKey) {
     console.warn('No OpenAI API key found in local storage.')

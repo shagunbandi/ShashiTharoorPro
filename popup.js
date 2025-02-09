@@ -1,8 +1,17 @@
 document.getElementById('saveButton').addEventListener('click', () => {
-    const apiKey = document.getElementById('apiKeyInput').value;
+    const apiKey = document.getElementById('apiKeyInput').value.trim();
+
+    console.log('API Key entered:', apiKey); // Log input for debugging
+
     if (apiKey) {
         chrome.storage.sync.set({ openAIKey: apiKey }, () => {
-            showTooltip('API Key saved successfully!');
+            if (chrome.runtime.lastError) {
+                console.error('Error saving API Key:', chrome.runtime.lastError.message);
+                showTooltip('Failed to save API Key.');
+            } else {
+                console.log('API Key saved successfully!');
+                showTooltip('API Key saved successfully!');
+            }
         });
     } else {
         showTooltip('Please enter a valid API Key.');
