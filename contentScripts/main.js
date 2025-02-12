@@ -2,7 +2,11 @@
 import { parseCommand } from './commands.js'
 import { improveText, elaborateText, translateText } from './openAI.js'
 import { getTextFromTarget, setTextToTarget } from './domUtils.js'
-import { showTooltip, removeTooltip } from './tooltip.js'
+import {
+  showTooltip,
+  removeTooltip,
+  showInteractiveTooltip,
+} from './tooltip.js'
 // If you have a storage module, import it if needed:
 import { getUserAPIKey } from './storage.js'
 
@@ -26,13 +30,25 @@ function handleKeyUp(event) {
   const parsed = parseCommand(text)
   if (parsed) {
     // If we have a command, let's call the relevant OpenAI function
-    // “parsed.textToProcess” is the substring we want to transform
+    // "parsed.textToProcess" is the substring we want to transform
     fetchAndShowSuggestion(target, text, parsed)
   }
 }
 
 async function fetchAndShowSuggestion(target, fullText, parsedCommand) {
   const { commandType, textToProcess, language, replacedRange } = parsedCommand
+
+  if (commandType === 'help') {
+    const tooltipEl = showInteractiveTooltip(target, textToProcess)
+    activeSuggestion = {
+      target,
+      originalText: fullText,
+      improvedText: textToProcess, // Keep original text for now
+      tooltipEl,
+    }
+    return
+  }
+
   let improved = textToProcess
 
   try {

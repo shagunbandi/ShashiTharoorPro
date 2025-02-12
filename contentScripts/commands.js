@@ -11,6 +11,15 @@
 export function parseCommand(fullText) {
   const trimmedText = fullText.trimEnd()
 
+  // Add help command check first
+  if (trimmedText.endsWith('/help')) {
+    return {
+      commandType: 'help',
+      textToProcess: trimmedText.slice(0, -5).trim(), // Remove '/help'
+      replacedRange: [0, trimmedText.length],
+    }
+  }
+
   // 1) Block syntax: /start ... /end /ai  OR  /s ... /e /t ...
   const blockMatch = matchBlockSyntax(trimmedText)
   if (blockMatch) return blockMatch
@@ -148,51 +157,51 @@ function matchTranslateSlashEnd(text) {
 }
 
 function handleAICommand(command, text) {
-    chrome.storage.sync.get('openAIKey', (data) => {
-        if (!data.openAIKey) {
-            console.warn('OpenAI API key is not set. Command will not be executed.');
-            return;
-        }
+  chrome.storage.sync.get('openAIKey', (data) => {
+    if (!data.openAIKey) {
+      console.warn('OpenAI API key is not set. Command will not be executed.')
+      return
+    }
 
-        switch (command) {
-            case '/rewrite':
-                rewriteText(text);
-                break;
-            case '/elaborate':
-                elaborateText(text);
-                break;
-            case '/translate':
-                translateText(text);
-                break;
-            case '/summarize':
-                summarizeText(text);
-                break;
-            default:
-                console.error('Unknown command');
-        }
-    });
+    switch (command) {
+      case '/rewrite':
+        rewriteText(text)
+        break
+      case '/elaborate':
+        elaborateText(text)
+        break
+      case '/translate':
+        translateText(text)
+        break
+      case '/summarize':
+        summarizeText(text)
+        break
+      default:
+        console.error('Unknown command')
+    }
+  })
 }
 
 function rewriteText(text) {
-    // Implement logic to rewrite text professionally
-    console.log('Rewriting text:', text);
-    // Call OpenAI API or other service
+  // Implement logic to rewrite text professionally
+  console.log('Rewriting text:', text)
+  // Call OpenAI API or other service
 }
 
 function elaborateText(text) {
-    // Implement logic to elaborate on text
-    console.log('Elaborating text:', text);
-    // Call OpenAI API or other service
+  // Implement logic to elaborate on text
+  console.log('Elaborating text:', text)
+  // Call OpenAI API or other service
 }
 
 function translateText(text) {
-    // Implement logic to translate text
-    console.log('Translating text:', text);
-    // Call OpenAI API or other service
+  // Implement logic to translate text
+  console.log('Translating text:', text)
+  // Call OpenAI API or other service
 }
 
 function summarizeText(text) {
-    // Implement logic to summarize text
-    console.log('Summarizing text:', text);
-    // Call OpenAI API or other service
+  // Implement logic to summarize text
+  console.log('Summarizing text:', text)
+  // Call OpenAI API or other service
 }
