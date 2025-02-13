@@ -1,45 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Set OpenAI API Key</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            min-width: 300px; /* Set minimum width */
-            min-height: 400px; /* Increased minimum height */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-        }
-        img {
-            width: 128px;
-            height: 128px;
-            margin-bottom: 20px; /* Space between image and input */
-        }
-        input {
-            width: 100%;
-            padding: 8px;
-            margin-top: 10px;
-        }
-        button {
-            padding: 10px 20px;
-            margin-top: 10px;
-            margin-bottom: 20px; /* Space between button and tooltip */
-        }
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        min-width: 300px; /* Set minimum width */
+        min-height: 400px; /* Increased minimum height */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+      }
+      img {
+        width: 128px;
+        height: 128px;
+        margin-bottom: 20px; /* Space between image and input */
+      }
+      input {
+        width: 100%;
+        padding: 8px;
+        margin-top: 10px;
+      }
+      button {
+        padding: 10px 20px;
+        margin-top: 10px;
+        margin-bottom: 20px; /* Space between button and tooltip */
+      }
     </style>
-</head>
-<body>
-    <img src="images/icon128.png" alt="Extension Logo">
+  </head>
+  <body>
+    <center><h1>MentosAI</h1></center>
+    <img src="images/icon128.png" alt="Extension Logo" />
+    <h2>How to Use MentosAI</h2>
+    <center>
+      <h3>
+        Simply type your message and type
+        <code style="color: darkgreen">/ai</code> or
+        <code style="color: darkgreen">/elaborate</code> or
+        <code style="color: darkgreen">/translate language/</code> or
+        <code style="color: darkgreen">/help</code>
+      </h3>
+    </center>
     <h2>Enter OpenAI API Key</h2>
     <div>
-        <input type="text" id="apiKeyInput" placeholder="Enter your OpenAI API Key">
-        <button id="saveButton">Save</button>
+      <input
+        type="text"
+        id="apiKeyInput"
+        placeholder="Enter your OpenAI API Key"
+      />
+      <center>
+        <h3>
+          Do you have your OpenAI API Key? If not, please follow the
+          instructions
+          <a
+            href="https://github.com/shagunbandi/ShashiTharoorPro?tab=readme-ov-file#openai-api-key"
+            target="_blank"
+            >here</a
+          >.
+        </h3>
+      </center>
+      <center><button id="saveButton">Save</button></center>
     </div>
 
     <script src="popup.js"></script>
-</body>
-</html> 
+  </body>
+</html>

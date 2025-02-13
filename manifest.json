@@ -1,5 +1,5 @@
 {
-  "name": "My AI Improver",
+  "name": "MentosAI",
   "version": "1.0",
   "manifest_version": 3,
   "description": "Rewrite text using OpenAI. Stores API key in Options page.",
