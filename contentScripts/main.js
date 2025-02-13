@@ -94,6 +94,11 @@ function handleKeyDown(event) {
 
   const { target, improvedText } = activeSuggestion
 
+  // Don't handle events from within the tooltip
+  if (isEventFromTooltip(event)) {
+    return
+  }
+
   // Tab => accept
   if (event.key === 'Tab') {
     event.preventDefault()
@@ -140,4 +145,13 @@ function acceptSuggestion(target, improvedText) {
 function rejectSuggestion() {
   removeTooltip()
   activeSuggestion = null
+}
+
+// Add this new helper function
+function isEventFromTooltip(event) {
+  const tooltipEl = document.getElementById('ai-tooltip')
+  return (
+    tooltipEl &&
+    (tooltipEl === event.target || tooltipEl.contains(event.target))
+  )
 }

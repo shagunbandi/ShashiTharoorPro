@@ -40,15 +40,15 @@ async function callOpenAI(promptText) {
 }
 
 async function callOpenAIAPI(endpoint, data) {
-    const response = await fetch(`https://api.openai.com/v1/${endpoint}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer YOUR_API_KEY`
-        },
-        body: JSON.stringify(data)
-    });
-    return response.json();
+  const response = await fetch(`https://api.openai.com/v1/${endpoint}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer YOUR_API_KEY`,
+    },
+    body: JSON.stringify(data),
+  })
+  return response.json()
 }
 
 export async function improveText(originalText) {
@@ -59,7 +59,7 @@ export async function improveText(originalText) {
 
 export async function elaborateText(originalText) {
   // For example, instruct GPT to elaborate or add detail
-  const prompt = `Elaborate on the following text with more detail:\n\n${originalText}\n\nElaborated text:`
+  const prompt = `Elaborate on the following text with more detail but keep it to the point. Don't write more than thrice the words there were initially.:\n\n${originalText}\n\nElaborated text:`
   const result = await callOpenAI(prompt)
   return result || originalText
 }
@@ -72,7 +72,13 @@ export async function translateText(originalText, language) {
 }
 
 export async function summarizeText(originalText) {
-    const prompt = `Summarize the following text:\n\n${originalText}\n\nSummary:`;
-    const result = await callOpenAI(prompt);
-    return result || originalText;
+  const prompt = `Summarize the following text:\n\n${originalText}\n\nSummary:`
+  const result = await callOpenAI(prompt)
+  return result || originalText
+}
+
+export async function getExpertAdvice(context, query) {
+  const prompt = `Question: ${query}\n\nPlease provide an expert advice about this question.`
+  const result = await callOpenAI(prompt)
+  return result || 'Sorry, unable to get expert advice at this time.'
 }
